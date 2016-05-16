@@ -46,16 +46,23 @@ class VerticaDriver implements Driver
         if (!empty($params['dsn'])) {
             $dsn .= $params['dsn'];
         } else {
-            $dsn .= 'Driver=' . (!empty($params['driverOptions']['odbc_driver']) ? $params['driverOptions']['odbc_driver'] : 'Vertica') . ';';
-            if (isset($params['host'])) {
-                $dsn .= 'Servername=' . $params['host'] . ';';
-            }
-            if (isset($params['port'])) {
-                $dsn .= 'Port=' . $params['port'] . ';';
-            }
-            if (isset($params['dbname'])) {
-                $dsn .= 'Database=' . $params['dbname'] . ';';
-            }
+            $driverOptions = !empty($params['driverOptions']) ? $params['driverOptions'] : [];
+
+            $dsn .= 'Driver=' . (!empty($driverOptions['odbc_driver']) ? $params['driverOptions']['odbc_driver'] : 'Vertica') . ';';
+
+            $dsn .= isset($params['host']) ? 'Servername=' . $params['host'] . ';' : '';
+            $dsn .= isset($params['port']) ? 'Port=' . $params['port'] . ';' : '';
+            $dsn .= isset($params['dbname']) ? 'Database=' . $params['dbname'] . ';' : '';
+
+            $dsn .= !empty($driverOptions['connection_load_balance']) ? 'ConnectionLoadBalance=' . $driverOptions['connection_load_balance'] . ';' : '';
+            $dsn .= !empty($driverOptions['backup_server_nodes']) ? 'BackupServerNode=' . $driverOptions['backup_server_nodes'] . ';' : '';
+
+            $connectionSettings   = [];
+            $connectionSettings[] = !empty($driverOptions['schema']) ? sprintf("SET search_path='%s'", $driverOptions['schema']) : '';
+            $connectionSettings[] = !empty($driverOptions['connection_settings']) ? $driverOptions['connection_settings'] : '';
+            $connectionSettings   = array_filter($connectionSettings, function($val) { return !empty($val); });
+
+            $dsn .= sprintf("ConnSettings=%s;", str_replace([';',' '],['%3B','+'], implode('%3B', $connectionSettings)));
         }
 
         return $dsn;
