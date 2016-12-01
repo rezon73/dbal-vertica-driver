@@ -81,7 +81,7 @@ class ODBCStatement implements Iterator, Statement
     {
         $this->options = $options;
         $this->dbh = $dbh;
-        $this->parseQuery($query);
+        $this->query = $this->parseQuery($query);
         $this->prepare();
     }
 
@@ -314,7 +314,9 @@ class ODBCStatement implements Iterator, Statement
     /**
      * Parses query to replace named parameters with positional
      *
-     * @param $query
+     * @param string $query
+     *
+     * @return string
      */
     protected function parseQuery($query)
     {
@@ -332,12 +334,12 @@ class ODBCStatement implements Iterator, Statement
             // We have only positional parameters so we need only remap keys for 1-based indexes
             $this->paramMap = array_combine(range(1, count($positions)), $positions);
 
-            return;
+            return $query;
         }
 
         $positions = SQLParserUtils::getPlaceholderPositions($query, false);
         if (!$positions) {
-            return;
+            return $query;
         }
 
         // Remap name parameters to positional
@@ -354,7 +356,7 @@ class ODBCStatement implements Iterator, Statement
             $i++;
         }
 
-        $this->query = implode('?', $queryParts);
+        return implode('?', $queryParts);
     }
 
     /**

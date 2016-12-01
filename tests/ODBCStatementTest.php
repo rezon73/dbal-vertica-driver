@@ -24,10 +24,10 @@ class ODBCStatementTest extends \PHPUnit_Framework_TestCase
         $method = $class->getMethod('parseQuery');
         $method->setAccessible(true);
         $object = $class->newInstanceWithoutConstructor();
-        $method->invoke($object, 'SELECT * FROM log WHERE log.date = :date AND log.hour = :hour GROUP BY 1, 2, 3;');
-        $query = $class->getProperty('query');
-        $query->setAccessible(true);
-        $query = $query->getValue($object);
+        $query = $method->invoke(
+            $object,
+            'SELECT * FROM log WHERE log.date = :date AND log.hour = :hour GROUP BY 1, 2, 3;'
+        );
         self::assertSame('SELECT * FROM log WHERE log.date = ? AND log.hour = ? GROUP BY 1, 2, 3;', $query);
         $map = $class->getProperty('paramMap');
         $map->setAccessible(true);
