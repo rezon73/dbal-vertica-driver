@@ -171,18 +171,18 @@ class ODBCStatement implements Iterator, Statement
                 $this->bindValue($pos, $value);
             }
         }
-
-        if (count($this->params) != count($this->paramMap)) {
-            throw new ODBCException(
-                sprintf(
-                    'Parameter count (%s) does not match prepared placeholder count (%s)',
-                    count($params),
-                    count($this->paramMap)
-                )
-            );
+        $requiredParameters = array_diff(array_unique($this->paramMap), array_keys($this->params));
+        if (!empty($requiredParameters)) {
+            throw new ODBCException(sprintf('Parameters "%s" has no values.', join(', ', $requiredParameters)));
         }
 
-        if (!@odbc_execute($this->sth, $this->params)) {
+        $params = array_map(
+            function ($name) {
+                return $this->params[$name];
+            },
+            $this->paramMap
+        );
+        if (!@odbc_execute($this->sth, $params)) {
             throw ODBCException::fromConnection($this->dbh);
         }
 
