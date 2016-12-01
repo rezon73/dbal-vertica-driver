@@ -11,6 +11,7 @@ namespace Che\DBAL\Vertica;
 
 use Doctrine\DBAL\Driver\Statement;
 use Doctrine\DBAL\SQLParserUtils;
+use Iterator;
 
 /**
  * Statement implementation for ODBC connection
@@ -18,22 +19,22 @@ use Doctrine\DBAL\SQLParserUtils;
  * @author Kirill chEbba Chebunin <iam@chebba.org>
  * @license http://www.opensource.org/licenses/mit-license.php MIT
  */
-class ODBCStatement implements \Iterator, Statement
+class ODBCStatement implements Iterator, Statement
 {
     /**
-     * @var
+     * @var resource
      */
     private $dbh;
     /**
-     * @var
+     * @var string
      */
     private $originalQuery;
     /**
-     * @var
+     * @var string
      */
     private $query;
     /**
-     * @var
+     * @var resource
      */
     private $sth;
     /**
@@ -45,13 +46,13 @@ class ODBCStatement implements \Iterator, Statement
      */
     private $defaultFetchMode = \PDO::FETCH_BOTH;
     /**
-     * @var
+     * @var array
      */
-    private $paramMap;
+    private $paramMap = [];
     /**
-     * @var
+     * @var array
      */
-    private $params;
+    private $params = [];
     /**
      * @var bool
      */
@@ -65,15 +66,15 @@ class ODBCStatement implements \Iterator, Statement
      */
     private $key = -1;
     /**
-     * @var null
+     * @var mixed
      */
     private $current = null;
 
     /**
      * ODBCStatement constructor.
      *
-     * @param $dbh
-     * @param $query
+     * @param resource $dbh
+     * @param string $query
      * @param array $options
      */
     public function __construct($dbh, $query, array $options = [])
@@ -121,11 +122,10 @@ class ODBCStatement implements \Iterator, Statement
      */
     public function fetch($fetchMode = null)
     {
-        $fetchMode = $fetchMode ?: $this->defaultFetchMode;
-        $fetched = odbc_fetch_row($this->sth);
-        if (!$fetched) {
+        if (!odbc_fetch_row($this->sth)) {
             return false;
         }
+        $fetchMode = $fetchMode ?: $this->defaultFetchMode;
         $numFields = odbc_num_fields($this->sth);
         $row = [];
         switch ($fetchMode) {
@@ -140,8 +140,7 @@ class ODBCStatement implements \Iterator, Statement
                     $row[] = odbc_result($this->sth, $i);
                 }
                 break;
-
-            case \PDO::FETCH_BOTH;
+            case \PDO::FETCH_BOTH:
                 for ($i = 1; $i <= $numFields; $i++) {
                     $value = odbc_result($this->sth, $i);
                     $row[] = $value;

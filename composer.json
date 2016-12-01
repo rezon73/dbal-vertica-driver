@@ -24,6 +24,11 @@
             "Che\\DBAL\\Vertica": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Che\\DBAL\\Vertica\\Tests\\": "tests/"
+        }
+    },
     "require": {
         "php": ">=5.4.0",
         "ext-odbc": "*",
