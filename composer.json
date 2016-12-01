@@ -1,5 +1,5 @@
 {
-    "name": "che/dbal-vertica-driver",
+    "name": "komex/dbal-vertica-driver",
     "description": "Doctrine DBAL driver for Vertica",
     "keywords": [
         "database",
@@ -9,14 +9,23 @@
         "driver",
         "analytics"
     ],
-    "homepage": "http://github.com/chEbba/dbal-vertica-driver",
+    "homepage": "https://github.com/komex/dbal-vertica-driver",
     "type": "library",
     "license": "MIT",
+    "replace": {
+        "che/dbal-vertica-driver": "*"
+    },
     "authors": [
         {
             "name": "Kirill chEbba Chebunin",
             "email": "iam@chebba.org",
             "homepage": "http://github.com/chEbba"
+        },
+        {
+            "name": "Andrey Kolchenko",
+            "email": "andrey@kolchenko.me",
+            "role": "developer",
+            "homepage": "https://github.com/komex"
         }
     ],
     "autoload": {

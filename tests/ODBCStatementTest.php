@@ -2,7 +2,7 @@
 /**
  * This file is a part of dbal-vertica-driver project.
  *
- * @author Andrey Kolchenko <andreydev@clickadu.net>
+ * @author Andrey Kolchenko <andrey@kolchenko.me>
  */
 
 namespace Che\DBAL\Vertica\Tests;
@@ -11,7 +11,7 @@ namespace Che\DBAL\Vertica\Tests;
  * Class ODBCStatementTest
  *
  * @package Che\DBAL\Vertica\Tests
- * @author Andrey Kolchenko <andreydev@clickadu.net>
+ * @author Andrey Kolchenko <andrey@kolchenko.me>
  */
 class ODBCStatementTest extends \PHPUnit_Framework_TestCase
 {
