@@ -111,13 +111,11 @@ class ODBCConnection implements Connection
      */
     public function quote($input, $type = \PDO::PARAM_STR)
     {
-        // Different databases uses different escape algorithms, we can use this as default only
-        // TODO: use custom function
-        if (is_int($input) || is_float($input)) {
-            return $input;
-        }
+        $statement = $this->prepare('SELECT QUOTE_LITERAL(?)');
+        $statement->bindValue(1, $input, $type);
+        $statement->execute();
 
-        return "'" . str_replace("'", "''", $input) . "'";
+        return $statement->fetchColumn();
     }
 
     /**
