@@ -26,11 +26,11 @@ class ODBCStatementTest extends \PHPUnit_Framework_TestCase
         $object = $class->newInstanceWithoutConstructor();
         $query = $method->invoke(
             $object,
-            'SELECT * FROM log WHERE log.date = :date AND log.hour = :hour GROUP BY 1, 2, 3;'
+            'SELECT :date, ? FROM log WHERE log.date = :date::DATE AND log.hour = :hour GROUP BY 1, ?, 3;'
         );
-        self::assertSame('SELECT * FROM log WHERE log.date = ? AND log.hour = ? GROUP BY 1, 2, 3;', $query);
+        self::assertSame('SELECT ?, ? FROM log WHERE log.date = ?::DATE AND log.hour = ? GROUP BY 1, ?, 3;', $query);
         $map = $class->getProperty('paramMap');
         $map->setAccessible(true);
-        self::assertSame([':date' => 0, ':hour' => 1], $map->getValue($object));
+        self::assertSame(['date', 1, 'date', 'hour', 2], $map->getValue($object));
     }
 }

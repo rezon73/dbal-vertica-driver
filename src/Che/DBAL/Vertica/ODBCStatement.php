@@ -10,7 +10,6 @@
 namespace Che\DBAL\Vertica;
 
 use Doctrine\DBAL\Driver\Statement;
-use Doctrine\DBAL\SQLParserUtils;
 use Iterator;
 
 /**
@@ -98,13 +97,12 @@ class ODBCStatement implements Iterator, Statement
      */
     public function bindParam($column, &$variable, $type = null, $length = null)
     {
-        if (!isset($this->paramMap[$column])) {
+        if (!in_array($column, $this->paramMap, true)) {
             throw new ODBCException(
                 sprintf('Parameter identifier "%s" is not presented in the query "%s"', $column, $this->originalQuery)
             );
         }
-
-        $this->params[$this->paramMap[$column]] = &$variable;
+        $this->params[$column] = &$variable;
 
         return true;
     }
@@ -165,7 +163,7 @@ class ODBCStatement implements Iterator, Statement
             $this->executed = false;
         }
 
-        if ($params) {
+        if (!empty($params) && is_array($params)) {
             foreach ($params as $pos => $value) {
                 if (is_int($pos)) {
                     $pos += 1;
@@ -324,39 +322,22 @@ class ODBCStatement implements Iterator, Statement
         $this->query = $query;
         $this->paramMap = [];
         $this->params = [];
+        $counter = 1;
 
-        $positions = array_flip(SQLParserUtils::getPlaceholderPositions($query));
-        if ($positions) {
-            if (SQLParserUtils::getPlaceholderPositions($query, false)) {
-                throw new ODBCException('Positional and named parameters can not be mixed');
-            }
+        return preg_replace_callback(
+            '/(?<=\s):[a-z]\w*|(?<=\s)\?/i',
+            function (array $match) use (&$counter) {
+                $name = $match[0];
+                if ($name === '?') {
+                    $this->paramMap[] = $counter++;
+                } else {
+                    $this->paramMap[] = substr($name, 1);
+                }
 
-            // We have only positional parameters so we need only remap keys for 1-based indexes
-            $this->paramMap = array_combine(range(1, count($positions)), $positions);
-
-            return $query;
-        }
-
-        $positions = SQLParserUtils::getPlaceholderPositions($query, false);
-        if (!$positions) {
-            return $query;
-        }
-
-        // Remap name parameters to positional
-        $queryLength = strlen($query);
-        $queryParts = [$query];
-        $i = 0;
-        foreach ($positions as $pos => $param) {
-            // replace named parameter placeholder with position one
-            $this->paramMap[':' . $param] = $i;
-            $lastPart = array_pop($queryParts);
-            $queryParts[] = substr($lastPart, 0, -1 * ($queryLength - $pos));
-            $queryParts[] = substr($lastPart, $pos + strlen($param) + 1);
-
-            $i++;
-        }
-
-        return implode('?', $queryParts);
+                return '?';
+            },
+            $query
+        );
     }
 
     /**
