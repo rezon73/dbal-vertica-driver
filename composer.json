@@ -1,7 +1,14 @@
 {
     "name": "che/dbal-vertica-driver",
     "description": "Doctrine DBAL driver for Vertica",
-    "keywords": ["database", "dbal", "doctrine", "vertica", "driver", "analytics"],
+    "keywords": [
+        "database",
+        "dbal",
+        "doctrine",
+        "vertica",
+        "driver",
+        "analytics"
+    ],
     "homepage": "http://github.com/chEbba/dbal-vertica-driver",
     "type": "library",
     "license": "MIT",
@@ -12,13 +19,14 @@
             "homepage": "http://github.com/chEbba"
         }
     ],
-
     "autoload": {
-        "psr-0": { "Che\\DBAL\\Vertica": "src/" }
+        "psr-0": {
+            "Che\\DBAL\\Vertica": "src/"
+        }
     },
-
     "require": {
         "php": ">=5.4.0",
+        "ext-odbc": "*",
         "doctrine/dbal": "~2.3"
     },
     "require-dev": {
