@@ -26,7 +26,7 @@ class ODBCConnection implements Connection
     /**
      * @var array
      */
-    private static $DEFAULT_OPTIONS = [
+    private static $defaultOptions = [
         self::OPTION_EMULATE_MULTIPLE_EXEC => false,
     ];
     /**
@@ -48,7 +48,7 @@ class ODBCConnection implements Connection
      */
     public function __construct($dsn, $user, $password, array $options = [])
     {
-        $this->options = array_merge(self::$DEFAULT_OPTIONS, $options);
+        $this->options = array_merge(self::$defaultOptions, $options);
         $this->dbh = @odbc_connect($dsn, $user, $password);
         if (!$this->dbh) {
             $error = error_get_last();
@@ -138,7 +138,15 @@ class ODBCConnection implements Connection
      */
     public function lastInsertId($name = null)
     {
-        return $this->query("SELECT CURRVAL('%s')")->fetchColumn();
+        if (empty($name)) {
+            $statement = $this->prepare('SELECT LAST_INSERT_ID()');
+        } else {
+            $statement = $this->prepare('SELECT CURRVAL(?)');
+            $statement->bindValue(1, $name);
+        }
+        $statement->execute();
+
+        return $statement->fetchColumn();
     }
 
     /**
