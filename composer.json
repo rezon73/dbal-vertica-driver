@@ -12,7 +12,7 @@
     "homepage": "https://github.com/komex/dbal-vertica-driver",
     "type": "library",
     "license": "MIT",
-    "replace": {
+    "conflict": {
         "che/dbal-vertica-driver": "*"
     },
     "authors": [
