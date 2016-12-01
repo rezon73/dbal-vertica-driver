@@ -10,9 +10,6 @@
 namespace Che\DBAL\Vertica;
 
 use Doctrine\DBAL\DBALException;
-use Doctrine\DBAL\Event\SchemaCreateTableColumnEventArgs;
-use Doctrine\DBAL\Event\SchemaCreateTableEventArgs;
-use Doctrine\DBAL\Events;
 use Doctrine\DBAL\Platforms\PostgreSqlPlatform;
 use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Schema\ColumnDiff;
@@ -21,7 +18,6 @@ use Doctrine\DBAL\Schema\Index;
 use Doctrine\DBAL\Schema\Sequence;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Schema\TableDiff;
-use Doctrine\DBAL\Types\Type;
 
 /**
  * DBAL Platform for Vertica
@@ -39,6 +35,9 @@ class VerticaPlatform extends PostgreSqlPlatform
         return 'vertica';
     }
 
+    /**
+     * @return bool
+     */
     public function supportsCreateDropDatabase()
     {
         return false;
@@ -52,11 +51,21 @@ class VerticaPlatform extends PostgreSqlPlatform
         return true;
     }
 
+    /**
+     * @param string $name
+     *
+     * @throws DBALException
+     */
     public function getCreateDatabaseSQL($name)
     {
         throw DBALException::notSupported(__METHOD__);
     }
 
+    /**
+     * @param string $database
+     *
+     * @throws DBALException
+     */
     public function getDropDatabaseSQL($database)
     {
         throw DBALException::notSupported(__METHOD__);
@@ -70,11 +79,19 @@ class VerticaPlatform extends PostgreSqlPlatform
         return "SELECT name as datname FROM v_catalog.databases";
     }
 
+    /**
+     * @param string $database
+     *
+     * @return string
+     */
     public function getListSequencesSQL($database)
     {
         return "SELECT sequence_name, increment_by, minimum from v_catalog.sequences";
     }
 
+    /**
+     * @return string
+     */
     public function getListTablesSQL()
     {
         return "SELECT table_name, table_schema as schema_name FROM v_catalog.tables";
@@ -118,6 +135,13 @@ class VerticaPlatform extends PostgreSqlPlatform
         return $this->getListTableConstraintsSQL($table);
     }
 
+    /**
+     * @param Index $index
+     * @param Table|string $table
+     *
+     * @return string
+     * @throws DBALException
+     */
     public function getCreateIndexSQL(Index $index, $table)
     {
         if ($index->isPrimary()) {
@@ -125,12 +149,14 @@ class VerticaPlatform extends PostgreSqlPlatform
         }
 
         if ($index->isSimpleIndex()) {
-            throw new DBALException(sprintf(
-                'Can not create index "%s" for table "%s": %s does not support common indexes',
-                $index->getName(),
-                $table,
-                $this->getName()
-            ));
+            throw new DBALException(
+                sprintf(
+                    'Can not create index "%s" for table "%s": %s does not support common indexes',
+                    $index->getName(),
+                    $table,
+                    $this->getName()
+                )
+            );
         }
 
         return $this->getCreateConstraintSQL($index, $table);
@@ -173,67 +199,10 @@ class VerticaPlatform extends PostgreSqlPlatform
     }
 
     /**
-     * {@inheritDoc}
+     * @param TableDiff $diff
+     *
+     * @return array
      */
-    protected function _getCreateTableSQL($tableName, array $columns, array $options = [])
-    {
-        $queryFields = $this->getColumnDeclarationListSQL($columns);
-
-        if (isset($options['primary']) && ! empty($options['primary'])) {
-            $keyColumns = array_unique(array_values($options['primary']));
-            $queryFields .= ', PRIMARY KEY(' . implode(', ', $keyColumns) . ')';
-        }
-
-        $query = 'CREATE TABLE ' . $tableName . ' (' . $queryFields . ')';
-
-        $sql[] = $query;
-
-        if (isset($options['indexes']) && ! empty($options['indexes'])) {
-            /** @var Index $index */
-            foreach ($options['indexes'] as $index) {
-                if ($index->isUnique() && !$index->isPrimary()) {
-                    $sql[] = $this->getCreateConstraintSQL($index, $tableName);
-                }
-            }
-        }
-
-        if (isset($options['foreignKeys'])) {
-            foreach ((array) $options['foreignKeys'] as $definition) {
-                $sql[] = $this->getCreateForeignKeySQL($definition, $tableName);
-            }
-        }
-
-        return $sql;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    protected function onSchemaAlterTableAddColumn(Column $column, TableDiff $diff, &$columnSql)
-    {
-        $defaultPrevented = parent::onSchemaAlterTableAddColumn($column, $diff, $columnSql);
-        if ($defaultPrevented) {
-            return true;
-        }
-
-        /** @var Column $column */
-        foreach ($diff->addedColumns as $column) {
-            $columnData = $column->toArray();
-            $notNullWithoutDefault = !empty($columnData['notnull']) && !isset($columnData['default']);
-            if ($notNullWithoutDefault) {
-                $columnData['notnull'] = false;
-            }
-
-            $query = 'ADD ' . $this->getColumnDeclarationSQL($column->getQuotedName($this), $columnData);
-            $columnSql[] = 'ALTER TABLE ' . $diff->name . ' ' . $query;
-            if ($notNullWithoutDefault) {
-                $columnSql[] = 'ALTER TABLE ' . $diff->name . ' ALTER ' . $column->getQuotedName($this) . ' SET NOT NULL';
-            }
-        }
-
-        return true;
-    }
-
     public function getAlterTableSQL(TableDiff $diff)
     {
         $sql = parent::getAlterTableSQL($diff);
@@ -253,19 +222,6 @@ class VerticaPlatform extends PostgreSqlPlatform
     }
 
     /**
-     * SQL for generating table comment with column comments
-     *
-     * @param array $tableName
-     * @param array $columnComments An array of [columnName => columnComment]
-     *
-     * @return string
-     */
-    protected function getCommentOnTableColumnsSQL($tableName, array $columnComments)
-    {
-        return sprintf("COMMENT ON TABLE %s IS '%s'", $tableName, json_encode($columnComments));
-    }
-
-    /**
      * {@inheritDoc}
      */
     public function getCommentOnColumnSQL($tableName, $columnName, $comment)
@@ -279,7 +235,7 @@ class VerticaPlatform extends PostgreSqlPlatform
     public function getTruncateTableSQL($tableName, $cascade = false)
     {
         // Vertica does not support cascade
-        return 'TRUNCATE TABLE '.$tableName;
+        return 'TRUNCATE TABLE ' . $tableName;
     }
 
     /**
@@ -308,6 +264,7 @@ class VerticaPlatform extends PostgreSqlPlatform
         if ($sequence instanceof Sequence) {
             $sequence = $sequence->getQuotedName($this);
         }
+
         return 'DROP SEQUENCE ' . $sequence;
     }
 
@@ -373,7 +330,84 @@ class VerticaPlatform extends PostgreSqlPlatform
     public function getVarcharMaxLength()
     {
         // Vertica's VARCHAR has 65k bytes (not chars), 1 byte for clob and divide by 4 for utf-8 support
-        return 65000/4 - 1;
+        return 65000 / 4 - 1;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function _getCreateTableSQL($tableName, array $columns, array $options = [])
+    {
+        $queryFields = $this->getColumnDeclarationListSQL($columns);
+
+        if (isset($options['primary']) && !empty($options['primary'])) {
+            $keyColumns = array_unique(array_values($options['primary']));
+            $queryFields .= ', PRIMARY KEY(' . implode(', ', $keyColumns) . ')';
+        }
+
+        $query = 'CREATE TABLE ' . $tableName . ' (' . $queryFields . ')';
+
+        $sql[] = $query;
+
+        if (isset($options['indexes']) && !empty($options['indexes'])) {
+            /** @var Index $index */
+            foreach ($options['indexes'] as $index) {
+                if ($index->isUnique() && !$index->isPrimary()) {
+                    $sql[] = $this->getCreateConstraintSQL($index, $tableName);
+                }
+            }
+        }
+
+        if (isset($options['foreignKeys'])) {
+            foreach ((array)$options['foreignKeys'] as $definition) {
+                $sql[] = $this->getCreateForeignKeySQL($definition, $tableName);
+            }
+        }
+
+        return $sql;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function onSchemaAlterTableAddColumn(Column $column, TableDiff $diff, &$columnSql)
+    {
+        $defaultPrevented = parent::onSchemaAlterTableAddColumn($column, $diff, $columnSql);
+        if ($defaultPrevented) {
+            return true;
+        }
+
+        /** @var Column $column */
+        foreach ($diff->addedColumns as $column) {
+            $columnData = $column->toArray();
+            $notNullWithoutDefault = !empty($columnData['notnull']) && !isset($columnData['default']);
+            if ($notNullWithoutDefault) {
+                $columnData['notnull'] = false;
+            }
+
+            $query = 'ADD ' . $this->getColumnDeclarationSQL($column->getQuotedName($this), $columnData);
+            $columnSql[] = 'ALTER TABLE ' . $diff->name . ' ' . $query;
+            if ($notNullWithoutDefault) {
+                $columnSql[] = 'ALTER TABLE ' . $diff->name . ' ALTER ' . $column->getQuotedName(
+                        $this
+                    ) . ' SET NOT NULL';
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * SQL for generating table comment with column comments
+     *
+     * @param array $tableName
+     * @param array $columnComments An array of [columnName => columnComment]
+     *
+     * @return string
+     */
+    protected function getCommentOnTableColumnsSQL($tableName, array $columnComments)
+    {
+        return sprintf("COMMENT ON TABLE %s IS '%s'", $tableName, json_encode($columnComments));
     }
 
     /**
@@ -383,45 +417,45 @@ class VerticaPlatform extends PostgreSqlPlatform
     {
         $this->doctrineTypeMapping = [
             // Vertica has only 64-bit integer, but we will treat al ass integer except bigint
-            'bigint'            => 'integer',
-            'integer'           => 'integer',
-            'int'               => 'integer',
-            'int8'              => 'integer',
-            'smallint'          => 'integer',
-            'tinyint'           => 'integer',
+            'bigint' => 'integer',
+            'integer' => 'integer',
+            'int' => 'integer',
+            'int8' => 'integer',
+            'smallint' => 'integer',
+            'tinyint' => 'integer',
 
-            'boolean'           => 'boolean',
+            'boolean' => 'boolean',
 
-            'varchar'           => 'string',
+            'varchar' => 'string',
             'character varying' => 'string',
-            'char'              => 'string',
-            'character'         => 'string',
+            'char' => 'string',
+            'character' => 'string',
 
             // custom type, Vertica has only varchar, but we will treat bi varchars (4k+) as text
-            'text'              => 'text',
+            'text' => 'text',
 
-            'date'              => 'date',
-            'datetime'          => 'datetime',
-            'smalldatetime'     => 'datetime',
-            'timestamp'         => 'datetime',
-            'timestamptz'       => 'datetimetz',
-            'time'              => 'time',
-            'timetz'            => 'time',
+            'date' => 'date',
+            'datetime' => 'datetime',
+            'smalldatetime' => 'datetime',
+            'timestamp' => 'datetime',
+            'timestamptz' => 'datetimetz',
+            'time' => 'time',
+            'timetz' => 'time',
 
-            'float'             => 'float',
-            'float8'            => 'float',
-            'double precision'  => 'float',
-            'real'              => 'float',
+            'float' => 'float',
+            'float8' => 'float',
+            'double precision' => 'float',
+            'real' => 'float',
 
-            'decimal'           => 'decimal',
-            'money'             => 'decimal',
-            'numeric'           => 'decimal',
-            'number'            => 'decimal',
+            'decimal' => 'decimal',
+            'money' => 'decimal',
+            'numeric' => 'decimal',
+            'number' => 'decimal',
 
-            'binary'            => 'blob',
-            'varbinary'         => 'blob',
-            'bytea'             => 'blob',
-            'raw'               => 'blob'
+            'binary' => 'blob',
+            'varbinary' => 'blob',
+            'bytea' => 'blob',
+            'raw' => 'blob',
         ];
     }
 }

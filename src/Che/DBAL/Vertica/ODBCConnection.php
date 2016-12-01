@@ -19,15 +19,33 @@ use Doctrine\DBAL\Driver\Connection;
  */
 class ODBCConnection implements Connection
 {
+    /**
+     *
+     */
     const OPTION_EMULATE_MULTIPLE_EXEC = 'emulate_multiple_exec';
-
+    /**
+     * @var array
+     */
     private static $DEFAULT_OPTIONS = [
-        self::OPTION_EMULATE_MULTIPLE_EXEC => false
+        self::OPTION_EMULATE_MULTIPLE_EXEC => false,
     ];
-
+    /**
+     * @var resource
+     */
     private $dbh;
+    /**
+     * @var array
+     */
     private $options;
 
+    /**
+     * ODBCConnection constructor.
+     *
+     * @param $dsn
+     * @param $user
+     * @param $password
+     * @param array $options
+     */
     public function __construct($dsn, $user, $password, array $options = [])
     {
         $this->options = array_merge(self::$DEFAULT_OPTIONS, $options);
@@ -36,9 +54,9 @@ class ODBCConnection implements Connection
             $error = error_get_last();
             throw new ODBCException($error['message']);
         }
-        
-        if ( ! empty( $this->options["search_path"] ) ) {
-            odbc_exec($this->dbh, "SET search_path to ".$this->options["search_path"]);
+
+        if (!empty($this->options["search_path"])) {
+            odbc_exec($this->dbh, "SET search_path to " . $this->options["search_path"]);
         }
     }
 
@@ -50,6 +68,11 @@ class ODBCConnection implements Connection
         return $this->options;
     }
 
+    /**
+     * @param $name
+     *
+     * @return mixed
+     */
     public function getOption($name)
     {
         if (!isset($this->options[$name])) {
@@ -80,6 +103,12 @@ class ODBCConnection implements Connection
         return $stmt;
     }
 
+    /**
+     * @param string $input
+     * @param int $type
+     *
+     * @return string
+     */
     public function quote($input, $type = \PDO::PARAM_STR)
     {
         // Different databases uses different escape algorithms, we can use this as default only
@@ -91,23 +120,89 @@ class ODBCConnection implements Connection
         return "'" . str_replace("'", "''", $input) . "'";
     }
 
+    /**
+     * @param string $statement
+     *
+     * @return int
+     */
     public function exec($statement)
     {
         $stmt = $this->prepare($statement);
         $stmt->execute();
+
         return $stmt->rowCount();
     }
 
+    /**
+     * @param null $name
+     *
+     * @return bool|mixed|string
+     */
     public function lastInsertId($name = null)
     {
         return $this->query("SELECT CURRVAL('%s')")->fetchColumn();
     }
 
+    /**
+     * @return bool
+     */
     public function inTransaction()
     {
         return !odbc_autocommit($this->dbh);
     }
 
+    /**
+     * @return mixed
+     */
+    public function beginTransaction()
+    {
+        $this->checkTransactionStarted(false);
+
+        return odbc_autocommit($this->dbh, false);
+    }
+
+    /**
+     * @return bool
+     */
+    public function commit()
+    {
+        $this->checkTransactionStarted();
+
+        return odbc_commit($this->dbh) && odbc_autocommit($this->dbh, true);
+    }
+
+    /**
+     * @return bool
+     */
+    public function rollBack()
+    {
+        $this->checkTransactionStarted();
+
+        return odbc_rollback($this->dbh) && odbc_autocommit($this->dbh, true);
+    }
+
+    /**
+     * @return string
+     */
+    public function errorCode()
+    {
+        return odbc_error($this->dbh);
+    }
+
+    /**
+     * @return array
+     */
+    public function errorInfo()
+    {
+        return [
+            'code' => odbc_error($this->dbh),
+            'message' => odbc_errormsg($this->dbh),
+        ];
+    }
+
+    /**
+     * @param bool $flag
+     */
     private function checkTransactionStarted($flag = true)
     {
         if ($flag && !$this->inTransaction()) {
@@ -116,39 +211,5 @@ class ODBCConnection implements Connection
         if (!$flag && $this->inTransaction()) {
             throw new ODBCException('Transaction was already started');
         }
-    }
-
-    public function beginTransaction()
-    {
-        $this->checkTransactionStarted(false);
-
-        return odbc_autocommit($this->dbh, false);
-    }
-
-    public function commit()
-    {
-        $this->checkTransactionStarted();
-
-        return odbc_commit($this->dbh) && odbc_autocommit($this->dbh, true);
-    }
-
-    public function rollBack()
-    {
-        $this->checkTransactionStarted();
-
-        return odbc_rollback($this->dbh) && odbc_autocommit($this->dbh, true);
-    }
-
-    public function errorCode()
-    {
-        return odbc_error($this->dbh);
-    }
-
-    public function errorInfo()
-    {
-        return [
-            'code' => odbc_error($this->dbh),
-            'message' => odbc_errormsg($this->dbh)
-        ];
     }
 }

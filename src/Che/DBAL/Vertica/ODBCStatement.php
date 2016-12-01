@@ -20,84 +20,68 @@ use Doctrine\DBAL\SQLParserUtils;
  */
 class ODBCStatement implements \Iterator, Statement
 {
+    /**
+     * @var
+     */
     private $dbh;
+    /**
+     * @var
+     */
     private $originalQuery;
+    /**
+     * @var
+     */
     private $query;
+    /**
+     * @var
+     */
     private $sth;
+    /**
+     * @var array
+     */
     private $options;
+    /**
+     * @var int
+     */
     private $defaultFetchMode = \PDO::FETCH_BOTH;
+    /**
+     * @var
+     */
     private $paramMap;
+    /**
+     * @var
+     */
     private $params;
+    /**
+     * @var bool
+     */
     private $executed = false;
+    /**
+     * @var bool
+     */
     private $started = false;
+    /**
+     * @var int
+     */
     private $key = -1;
+    /**
+     * @var null
+     */
     private $current = null;
 
+    /**
+     * ODBCStatement constructor.
+     *
+     * @param $dbh
+     * @param $query
+     * @param array $options
+     */
     public function __construct($dbh, $query, array $options = [])
     {
         $this->options = $options;
         $this->dbh = $dbh;
         $this->parseQuery($query);
         $this->prepare();
-    }
-
-    /**
-     * Parses query to replace named parameters with positional
-     *
-     * @param $query
-     */
-    protected function parseQuery($query)
-    {
-        $this->originalQuery = $query;
-        $this->query = $query;
-        $this->paramMap = [];
-        $this->params = [];
-
-        $positions = array_flip(SQLParserUtils::getPlaceholderPositions($query));
-        if ($positions) {
-            if (SQLParserUtils::getPlaceholderPositions($query, false)) {
-                throw new ODBCException('Positional and named parameters can not be mixed');
-            }
-
-            // We have only positional parameters so we need only remap keys for 1-based indexes
-            $this->paramMap = array_combine(range(1, count($positions)), $positions);
-
-            return;
-        }
-
-        $positions = SQLParserUtils::getPlaceholderPositions($query, false);
-        if (!$positions) {
-            return;
-        }
-
-        // Remap name parameters to positional
-        $queryLength = strlen($query);
-        $queryParts = [$query];
-        $i = 0;
-        foreach ($positions as $pos => $param) {
-            // replace named parameter placeholder with position one
-            $this->paramMap[':'.$param] = $i;
-            $lastPart = array_pop($queryParts);
-            $queryParts[] = substr($lastPart, 0, -1 * ($queryLength - $pos));
-            $queryParts[] = substr($lastPart, $pos + strlen($param) + 1);
-
-            $i++;
-        }
-
-        $this->query = implode('?', $queryParts);
-    }
-
-    /**
-     * Prepare parsed query
-     *
-     * @throws ODBCException
-     */
-    protected function prepare()
-    {
-        $this->sth = @odbc_prepare($this->dbh, $this->query);
-        if (!$this->sth) {
-            throw ODBCException::fromConnection($this->dbh);
-        }
     }
 
     /**
@@ -192,10 +176,13 @@ class ODBCStatement implements \Iterator, Statement
         }
 
         if (count($this->params) != count($this->paramMap)) {
-            throw new ODBCException(sprintf(
-                'Parameter count (%s) does not match prepared placeholder count (%s)',
-                count($params), count($this->paramMap)
-            ));
+            throw new ODBCException(
+                sprintf(
+                    'Parameter count (%s) does not match prepared placeholder count (%s)',
+                    count($params),
+                    count($this->paramMap)
+                )
+            );
         }
 
         if (!@odbc_execute($this->sth, $this->params)) {
@@ -257,7 +244,6 @@ class ODBCStatement implements \Iterator, Statement
         return odbc_free_result($this->sth);
     }
 
-
     /**
      * {@inheritDoc}
      */
@@ -273,7 +259,7 @@ class ODBCStatement implements \Iterator, Statement
     {
         return [
             'code' => odbc_error($this->dbh),
-            'message' => odbc_errormsg($this->dbh)
+            'message' => odbc_errormsg($this->dbh),
         ];
     }
 
@@ -324,5 +310,64 @@ class ODBCStatement implements \Iterator, Statement
     public function valid()
     {
         return $this->current !== false;
+    }
+
+    /**
+     * Parses query to replace named parameters with positional
+     *
+     * @param $query
+     */
+    protected function parseQuery($query)
+    {
+        $this->originalQuery = $query;
+        $this->query = $query;
+        $this->paramMap = [];
+        $this->params = [];
+
+        $positions = array_flip(SQLParserUtils::getPlaceholderPositions($query));
+        if ($positions) {
+            if (SQLParserUtils::getPlaceholderPositions($query, false)) {
+                throw new ODBCException('Positional and named parameters can not be mixed');
+            }
+
+            // We have only positional parameters so we need only remap keys for 1-based indexes
+            $this->paramMap = array_combine(range(1, count($positions)), $positions);
+
+            return;
+        }
+
+        $positions = SQLParserUtils::getPlaceholderPositions($query, false);
+        if (!$positions) {
+            return;
+        }
+
+        // Remap name parameters to positional
+        $queryLength = strlen($query);
+        $queryParts = [$query];
+        $i = 0;
+        foreach ($positions as $pos => $param) {
+            // replace named parameter placeholder with position one
+            $this->paramMap[':' . $param] = $i;
+            $lastPart = array_pop($queryParts);
+            $queryParts[] = substr($lastPart, 0, -1 * ($queryLength - $pos));
+            $queryParts[] = substr($lastPart, $pos + strlen($param) + 1);
+
+            $i++;
+        }
+
+        $this->query = implode('?', $queryParts);
+    }
+
+    /**
+     * Prepare parsed query
+     *
+     * @throws ODBCException
+     */
+    protected function prepare()
+    {
+        $this->sth = @odbc_prepare($this->dbh, $this->query);
+        if (!$this->sth) {
+            throw ODBCException::fromConnection($this->dbh);
+        }
     }
 }
