@@ -1,5 +1,5 @@
 {
-    "name": "komex/dbal-vertica-driver",
+    "name": "winnersoftlab/dbal-vertica-driver",
     "description": "Doctrine DBAL driver for Vertica",
     "keywords": [
         "database",
@@ -9,7 +9,7 @@
         "driver",
         "analytics"
     ],
-    "homepage": "https://github.com/komex/dbal-vertica-driver",
+    "homepage": "https://github.com/WinnerSoftLab/dbal-vertica-driver",
     "type": "library",
     "license": "MIT",
     "conflict": {
