@@ -113,10 +113,16 @@ class VerticaDriver implements Driver
                 }
             );
 
-            $dsn .= sprintf(
-                "ConnSettings=%s;",
-                str_replace([';', ' '], ['%3B', '+'], implode('%3B', $connectionSettings))
-            );
+            if (!empty($connectionSettings)) {
+                $dsn .= sprintf(
+                    "ConnSettings=%s;",
+                    str_replace([';', ' '], ['%3B', '+'], implode('%3B', $connectionSettings))
+                );
+            }
+
+            if (isset($driverOptions['label'])) {
+                $dsn .= 'Label=' . $driverOptions['label'];
+            }
         }
 
         return $dsn;
