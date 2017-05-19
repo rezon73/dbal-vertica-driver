@@ -9,8 +9,6 @@
 
 namespace Che\DBAL\Vertica;
 
-use Exception;
-
 /**
  * Base exception class for ODBC errors
  *
@@ -20,24 +18,12 @@ use Exception;
 class ODBCException extends \RuntimeException
 {
     /**
-     * ODBCException constructor.
-     *
-     * @param string $message
-     * @param int $code
-     * @param Exception $previous
-     */
-    public function __construct($message = "", $code = 0, Exception $previous = null)
-    {
-        parent::__construct(sprintf('[%s] %s', $code, $message), $code, $previous);
-    }
-
-    /**
      * @param resource $dbh
      *
      * @return ODBCException
      */
     public static function fromConnection($dbh)
     {
-        return new self(odbc_errormsg($dbh), odbc_error($dbh));
+        return new self(sprintf('[%s] %s', odbc_errormsg($dbh), odbc_error($dbh)));
     }
 }
