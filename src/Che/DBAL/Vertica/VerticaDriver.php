@@ -11,6 +11,8 @@ namespace Che\DBAL\Vertica;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver;
+use Symfony\Component\OptionsResolver\Options;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
  * DBAL Driver for {@link http://www.vertica.com/ Vertica}
@@ -20,6 +22,20 @@ use Doctrine\DBAL\Driver;
  */
 class VerticaDriver implements Driver
 {
+    /**
+     * @var OptionsResolver
+     */
+    private $resolver;
+
+    /**
+     * VerticaDriver constructor.
+     */
+    public function __construct()
+    {
+        $this->resolver = new OptionsResolver();
+        $this->configureResolver($this->resolver);
+    }
+
     /**
      * Attempts to create a connection with the database.
      *
@@ -37,7 +53,7 @@ class VerticaDriver implements Driver
      */
     public function connect(array $params, $username = null, $password = null, array $driverOptions = [])
     {
-        return new ODBCConnection($this->_constructDsn($params), $username, $password);
+        return new ODBCConnection($this->constructDsn($params), $username, $password);
     }
 
     /**
@@ -79,50 +95,124 @@ class VerticaDriver implements Driver
     }
 
     /**
+     * @param OptionsResolver $resolver
+     */
+    protected function configureResolver(OptionsResolver $resolver)
+    {
+        $booleanNormalizer = function (Options $options, $value) {
+            return ($value === true) ? 'true' : 'false';
+        };
+        $optionsResolver = new OptionsResolver();
+        $optionsResolver
+            ->setDefined(
+                [
+                    'odbc_driver',
+                    'connection_load_balance',
+                    'backup_server_nodes',
+                    'schema',
+                    'connection_settings',
+                    'label',
+                    'audo_commit',
+                    'direct_batch_insert',
+                    'locale',
+                    'read_only',
+                    'result_buffer_size',
+                ]
+            )
+            ->setDefault('odbc_driver', 'Vertica')
+            ->setAllowedTypes('odbc_driver', 'string')
+            ->setAllowedTypes('connection_load_balance', 'string')
+            ->setAllowedTypes('backup_server_nodes', 'string')
+            ->setAllowedTypes('schema', 'string')
+            ->setAllowedTypes('connection_settings', 'string')
+            ->setAllowedTypes('label', 'string')
+            ->setAllowedTypes('audo_commit', 'boolean')
+            ->setAllowedTypes('direct_batch_insert', 'boolean')
+            ->setAllowedTypes('read_only', 'boolean')
+            ->setAllowedTypes('locale', 'string')
+            ->setAllowedTypes('result_buffer_size', 'integer')
+            ->setNormalizer('audo_commit', $booleanNormalizer)
+            ->setNormalizer('direct_batch_insert', $booleanNormalizer)
+            ->setNormalizer('read_only', $booleanNormalizer);
+        $resolver
+            ->setDefined(['dsn', 'driverOptions'])
+            ->setDefaults(['host' => 'localhost', 'port' => 5433, 'dbname' => 'vmartdb', 'driverOptions' => []])
+            ->setAllowedTypes('dsn', 'string')
+            ->setAllowedTypes('host', 'string')
+            ->setAllowedTypes('port', 'integer')
+            ->setAllowedTypes('dbname', 'string')
+            ->setAllowedTypes('driverOptions', 'array')
+            ->setNormalizer(
+                'driverOptions',
+                function (Options $options, array $value) use ($optionsResolver) {
+                    if (!empty($options['dsn'])) {
+                        return [];
+                    }
+
+                    return $optionsResolver->resolve($value);
+                }
+            );
+    }
+
+    /**
      * @param array $params
      *
      * @return string
      */
-    private function _constructDsn(array $params)
+    protected function constructDsn(array $params)
     {
-        $dsn = '';
+        $params = $this->resolver->resolve($params);
         if (!empty($params['dsn'])) {
-            $dsn .= $params['dsn'];
-        } else {
-            $driverOptions = !empty($params['driverOptions']) ? $params['driverOptions'] : [];
+            return $params['dsn'];
+        }
+        $driverOptions = $params['driverOptions'];
+        $dsn = 'Driver=' . $driverOptions['odbc_driver'] . ';';
 
-            $dsn .= 'Driver=' . (!empty($driverOptions['odbc_driver']) ? $params['driverOptions']['odbc_driver'] : 'Vertica') . ';';
+        $dsn .= 'Servername=' . $params['host'] . ';';
+        $dsn .= 'Port=' . $params['port'] . ';';
+        $dsn .= 'Database=' . $params['dbname'] . ';';
 
-            $dsn .= isset($params['host']) ? 'Servername=' . $params['host'] . ';' : '';
-            $dsn .= isset($params['port']) ? 'Port=' . $params['port'] . ';' : '';
-            $dsn .= isset($params['dbname']) ? 'Database=' . $params['dbname'] . ';' : '';
+        if (!empty($driverOptions['connection_load_balance'])) {
+            $dsn .= 'ConnectionLoadBalance=' . $driverOptions['connection_load_balance'] . ';';
+        }
 
-            $dsn .= !empty($driverOptions['connection_load_balance']) ? 'ConnectionLoadBalance=' . $driverOptions['connection_load_balance'] . ';' : '';
-            $dsn .= !empty($driverOptions['backup_server_nodes']) ? 'BackupServerNode=' . $driverOptions['backup_server_nodes'] . ';' : '';
+        if (!empty($driverOptions['backup_server_nodes'])) {
+            $dsn .= 'BackupServerNode=' . $driverOptions['backup_server_nodes'] . ';';
+        }
 
-            $connectionSettings = [];
-            $connectionSettings[] = !empty($driverOptions['schema']) ? sprintf(
-                "SET search_path='%s'",
-                $driverOptions['schema']
-            ) : '';
-            $connectionSettings[] = !empty($driverOptions['connection_settings']) ? $driverOptions['connection_settings'] : '';
-            $connectionSettings = array_filter(
-                $connectionSettings,
-                function ($val) {
-                    return !empty($val);
-                }
+        $connectionSettings = [];
+        if (!empty($driverOptions['schema'])) {
+            $connectionSettings[] = sprintf('SET search_path=\'%s\'', $driverOptions['schema']);
+        }
+        if (!empty($driverOptions['connection_settings'])) {
+            $connectionSettings[] = $driverOptions['connection_settings'];
+        }
+
+        if (!empty($connectionSettings)) {
+            $dsn .= sprintf(
+                "ConnSettings=%s;",
+                str_replace([';', ' '], ['%3B', '+'], implode('%3B', $connectionSettings))
             );
+        }
 
-            if (!empty($connectionSettings)) {
-                $dsn .= sprintf(
-                    "ConnSettings=%s;",
-                    str_replace([';', ' '], ['%3B', '+'], implode('%3B', $connectionSettings))
-                );
-            }
+        if (!empty($driverOptions['label'])) {
+            $dsn .= 'Label=' . $driverOptions['label'];
+        }
 
-            if (isset($driverOptions['label'])) {
-                $dsn .= 'Label=' . $driverOptions['label'];
-            }
+        if (isset($driverOptions['audo_commit'])) {
+            $dsn .= 'AutoCommit=' . ($driverOptions['audo_commit'] ? 'true' : 'false') . ';';
+        }
+        if (isset($driverOptions['direct_batch_insert'])) {
+            $dsn .= 'DirectBatchInsert=' . ($driverOptions['direct_batch_insert'] ? 'true' : 'false') . ';';
+        }
+        if (isset($driverOptions['locale'])) {
+            $dsn .= 'Locale=' . $driverOptions['locale'] . ';';
+        }
+        if (isset($driverOptions['read_only'])) {
+            $dsn .= 'ReadOnly=' . ($driverOptions['read_only'] ? 'true' : 'false') . ';';
+        }
+        if (isset($driverOptions['result_buffer_size'])) {
+            $dsn .= 'ResultBufferSize=' . $driverOptions['result_buffer_size'] . ';';
         }
 
         return $dsn;

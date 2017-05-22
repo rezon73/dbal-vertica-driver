@@ -32,6 +32,5 @@ class ODBCStatementTest extends \PHPUnit_Framework_TestCase
         $map = $class->getProperty('paramMap');
         $map->setAccessible(true);
         self::assertSame(['date', 1, 'date', 'hour', 2], $map->getValue($object));
-        $object->execute([1 => 'dd', 'date' => 2016, 0 => 'ff', 'hour' => 16]);
     }
 }
