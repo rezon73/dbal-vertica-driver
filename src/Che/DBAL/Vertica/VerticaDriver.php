@@ -26,14 +26,18 @@ class VerticaDriver implements Driver
      * @var OptionsResolver
      */
     private $resolver;
+    /**
+     * @var OptionsResolver
+     */
+    private $driverResolver;
 
     /**
      * VerticaDriver constructor.
      */
     public function __construct()
     {
-        $this->resolver = new OptionsResolver();
-        $this->configureResolver($this->resolver);
+        $this->resolver = $this->configureResolver(new OptionsResolver());
+        $this->driverResolver = $this->configureDriverResolver(new OptionsResolver());
     }
 
     /**
@@ -53,7 +57,7 @@ class VerticaDriver implements Driver
      */
     public function connect(array $params, $username = null, $password = null, array $driverOptions = [])
     {
-        return new ODBCConnection($this->constructDsn($params), $username, $password);
+        return new ODBCConnection($this->constructDsn($params, $driverOptions), $username, $password);
     }
 
     /**
@@ -96,14 +100,33 @@ class VerticaDriver implements Driver
 
     /**
      * @param OptionsResolver $resolver
+     *
+     * @return OptionsResolver
      */
     protected function configureResolver(OptionsResolver $resolver)
+    {
+        $resolver
+            ->setDefined(['dsn'])
+            ->setDefaults(['host' => 'localhost', 'port' => 5433, 'dbname' => 'vmartdb'])
+            ->setAllowedTypes('dsn', 'string')
+            ->setAllowedTypes('host', 'string')
+            ->setAllowedTypes('port', 'integer')
+            ->setAllowedTypes('dbname', 'string');
+
+        return $resolver;
+    }
+
+    /**
+     * @param OptionsResolver $resolver
+     *
+     * @return OptionsResolver
+     */
+    protected function configureDriverResolver(OptionsResolver $resolver)
     {
         $booleanNormalizer = function (Options $options, $value) {
             return ($value === true) ? 'true' : 'false';
         };
-        $optionsResolver = new OptionsResolver();
-        $optionsResolver
+        $resolver
             ->setDefined(
                 [
                     'odbc_driver',
@@ -134,38 +157,25 @@ class VerticaDriver implements Driver
             ->setNormalizer('audo_commit', $booleanNormalizer)
             ->setNormalizer('direct_batch_insert', $booleanNormalizer)
             ->setNormalizer('read_only', $booleanNormalizer);
-        $resolver
-            ->setDefined(['dsn', 'driverOptions'])
-            ->setDefaults(['host' => 'localhost', 'port' => 5433, 'dbname' => 'vmartdb', 'driverOptions' => []])
-            ->setAllowedTypes('dsn', 'string')
-            ->setAllowedTypes('host', 'string')
-            ->setAllowedTypes('port', 'integer')
-            ->setAllowedTypes('dbname', 'string')
-            ->setAllowedTypes('driverOptions', 'array')
-            ->setNormalizer(
-                'driverOptions',
-                function (Options $options, array $value) use ($optionsResolver) {
-                    if (!empty($options['dsn'])) {
-                        return [];
-                    }
 
-                    return $optionsResolver->resolve($value);
-                }
-            );
+        return $resolver;
     }
 
     /**
      * @param array $params
+     * @param array $driverOptions
      *
      * @return string
      */
-    protected function constructDsn(array $params)
+    protected function constructDsn(array $params, array $driverOptions)
     {
-        $params = $this->resolver->resolve($params);
+        $params = $this->resolver->resolve(
+            array_intersect_key($params, array_flip($this->resolver->getDefinedOptions()))
+        );
         if (!empty($params['dsn'])) {
             return $params['dsn'];
         }
-        $driverOptions = $params['driverOptions'];
+        $driverOptions = $this->driverResolver->resolve($driverOptions);
         $dsn = 'Driver=' . $driverOptions['odbc_driver'] . ';';
 
         $dsn .= 'Servername=' . $params['host'] . ';';
@@ -196,7 +206,7 @@ class VerticaDriver implements Driver
         }
 
         if (!empty($driverOptions['label'])) {
-            $dsn .= 'Label=' . $driverOptions['label'];
+            $dsn .= 'Label=' . $driverOptions['label'] . ';';
         }
 
         if (isset($driverOptions['audo_commit'])) {
