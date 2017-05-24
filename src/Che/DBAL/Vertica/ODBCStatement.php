@@ -325,16 +325,18 @@ class ODBCStatement implements Iterator, Statement
         $counter = 1;
 
         return preg_replace_callback(
-            '/(?<!\w)(?:(?<!:):[a-z]\w*|\?)/i',
+            '/(?<=[\s\(\=,])(?:(\?)(?:(?=[\s\),])|;?$)|(?<!:)(:[a-z]\w*))/i',
             function (array $match) use (&$counter) {
                 $name = $match[0];
-                if ($name === '?') {
+                if ($name[0] === '?') {
                     $this->paramMap[] = $counter++;
+
+                    return $name;
                 } else {
                     $this->paramMap[] = substr($name, 1);
-                }
 
-                return '?';
+                    return '?';
+                }
             },
             $query
         );
