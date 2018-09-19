@@ -48,7 +48,7 @@ class VerticaDriver implements Driver
      *                                  - driver: ODBC Driver name, default to Vertica
      *                                  - host: server host
      *                                  - port: server port
-     *                                  - dbname: database name
+     *                                  - database: database name
      * @param string $username The username to use when connecting.
      * @param string $password The password to use when connecting.
      * @param array $driverOptions The driver options to use when connecting.
@@ -92,8 +92,8 @@ class VerticaDriver implements Driver
     {
         $params = $conn->getParams();
 
-        if (isset($params['dbname'])) {
-            return $params['dbname'];
+        if (isset($params['database'])) {
+            return $params['database'];
         }
 
         return $conn->query('SELECT CURRENT_DATABASE()')->fetchColumn();
@@ -108,11 +108,11 @@ class VerticaDriver implements Driver
     {
         $resolver
             ->setDefined(['dsn'])
-            ->setDefaults(['host' => 'localhost', 'port' => 5433, 'dbname' => 'vmartdb'])
+            ->setDefaults(['host' => 'localhost', 'port' => 5433, 'database' => 'vmartdb'])
             ->setAllowedTypes('dsn', 'string')
             ->setAllowedTypes('host', 'string')
             ->setAllowedTypes('port', 'integer')
-            ->setAllowedTypes('dbname', 'string');
+            ->setAllowedTypes('database', 'string');
 
         return $resolver;
     }
@@ -181,7 +181,7 @@ class VerticaDriver implements Driver
 
         $dsn .= 'Servername=' . $params['host'] . ';';
         $dsn .= 'Port=' . $params['port'] . ';';
-        $dsn .= 'Database=' . $params['dbname'] . ';';
+        $dsn .= 'Database=' . $params['database'] . ';';
 
         if (!empty($driverOptions['connection_load_balance'])) {
             $dsn .= 'ConnectionLoadBalance=' . $driverOptions['connection_load_balance'] . ';';
