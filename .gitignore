@@ -2,3 +2,4 @@
 *.iml
 vendor
 phpunit.xml
+composer.lock

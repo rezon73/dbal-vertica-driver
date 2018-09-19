@@ -7,14 +7,14 @@
 
 declare(strict_types=1);
 
-namespace Che\DBAL\Vertica\Tests;
+namespace Doctrine\DBAL\Driver\Vertica\Tests;
 
-use Che\DBAL\Vertica\VerticaDriver;
+use Doctrine\DBAL\Driver\Vertica\VerticaDriver;
 
 /**
  * Class VerticaDriverTest
  *
- * @package Che\DBAL\Vertica\Tests
+ * @package Doctrine\DBAL\Driver\Vertica\Tests
  * @author Andrey Kolchenko <andreydev@clickadu.net>
  */
 class VerticaDriverTest extends \PHPUnit_Framework_TestCase

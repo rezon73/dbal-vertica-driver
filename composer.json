@@ -1,5 +1,5 @@
 {
-    "name": "winnersoftlab/dbal-vertica-driver",
+    "name": "mixartemev/dbal-vertica-driver",
     "description": "Doctrine DBAL driver for Vertica",
     "keywords": [
         "database",
@@ -26,16 +26,22 @@
             "email": "andrey@kolchenko.me",
             "role": "developer",
             "homepage": "https://github.com/komex"
+        },
+        {
+            "name": "Mike Artemiev",
+            "email": "mixartemev@gmail.com",
+            "role": "developer",
+            "homepage": "https://github.com/mixartemev"
         }
     ],
     "autoload": {
         "psr-0": {
-            "Che\\DBAL\\Vertica": "src/"
+            "Doctrine\\DBAL\\Driver\\Vertica": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Che\\DBAL\\Vertica\\Tests\\": "tests/"
+            "Doctrine\\DBAL\\Driver\\Vertica\\Tests\\": "tests/"
         }
     },
     "require": {

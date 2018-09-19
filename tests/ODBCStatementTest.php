@@ -5,12 +5,12 @@
  * @author Andrey Kolchenko <andrey@kolchenko.me>
  */
 
-namespace Che\DBAL\Vertica\Tests;
+namespace Doctrine\DBAL\Driver\Vertica\Tests;
 
 /**
  * Class ODBCStatementTest
  *
- * @package Che\DBAL\Vertica\Tests
+ * @package Doctrine\DBAL\Driver\Vertica\Tests
  * @author Andrey Kolchenko <andrey@kolchenko.me>
  */
 class ODBCStatementTest extends \PHPUnit_Framework_TestCase

@@ -7,7 +7,7 @@
  * with this package in the file LICENSE.
  */
 
-namespace Che\DBAL\Vertica;
+namespace Doctrine\DBAL\Driver\Vertica;
 
 use Doctrine\DBAL\Driver\Connection;
 
