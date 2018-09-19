@@ -44,6 +44,7 @@ class VerticaSchemaManager extends PostgreSqlSchemaManager
 
     /**
      * {@inheritDoc}
+     * @throws \Doctrine\DBAL\DBALException
      */
     public function getSchemaSearchPaths()
     {
@@ -125,6 +126,7 @@ class VerticaSchemaManager extends PostgreSqlSchemaManager
      *
      * @return Column
      *
+     * @throws \Doctrine\DBAL\DBALException
      * @see AbstractSchemaManager::listTableColumns()
      * @see VerticaPlatform::getListTableColumnsSQL()
      */

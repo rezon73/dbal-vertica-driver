@@ -86,6 +86,7 @@ class VerticaDriver implements Driver
 
     /**
      * {@inheritDoc}
+     * @throws \Doctrine\DBAL\DBALException
      */
     public function getDatabase(Connection $conn)
     {
