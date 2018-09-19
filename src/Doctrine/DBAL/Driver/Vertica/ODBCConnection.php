@@ -49,7 +49,7 @@ class ODBCConnection implements Connection
     public function __construct($dsn, $user, $password, array $options = [])
     {
         $this->options = array_merge(self::$defaultOptions, $options);
-        $this->dbh = odbc_connect($dsn, $user, $password);
+        $this->dbh = @odbc_connect($dsn, $user, $password);
         if (!$this->dbh) {
             $error = error_get_last();
             throw new ODBCException($error['message']);
