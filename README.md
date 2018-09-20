@@ -31,7 +31,6 @@ Make ODBC and Vertica drivers to work together:
 * Add to your composer.json:
 ```json
     "repositories": [
-        ...
         {
             "type": "vcs",
             "url": "https://github.com/mixartemev/dbal-vertica-driver.git"
