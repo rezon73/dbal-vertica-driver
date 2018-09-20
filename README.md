@@ -29,5 +29,5 @@ Make ODBC and Vertica drivers to work together:
 
 ##### All the rest:
 ```bash
-composer update
+composer require mixartemev/dbal-vertica-driver
 ```
