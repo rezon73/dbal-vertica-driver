@@ -28,15 +28,6 @@ Make ODBC and Vertica drivers to work together:
 * create/edit file: /etc/vertica.ini ([example](https://github.com/skatrych/vertica-php-adapter/blob/master/examples/drivers/vertica.ini))
 
 ##### All the rest:
-* Add to your composer.json:
-```json
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/mixartemev/dbal-vertica-driver.git"
-        }
-    ]
-```
 ```bash
 composer update
 ```
