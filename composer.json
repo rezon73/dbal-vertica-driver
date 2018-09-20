@@ -9,7 +9,7 @@
         "driver",
         "analytics"
     ],
-    "homepage": "https://github.com/WinnerSoftLab/dbal-vertica-driver",
+    "homepage": "https://github.com/mixartemev/dbal-vertica-driver",
     "type": "library",
     "license": "MIT",
     "conflict": {
@@ -45,7 +45,7 @@
         }
     },
     "require": {
-        "php": ">=5.4.0",
+        "php": ">=7.0",
         "ext-json": "*",
         "ext-pdo": "*",
         "ext-odbc": "*",

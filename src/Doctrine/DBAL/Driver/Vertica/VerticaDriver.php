@@ -60,7 +60,7 @@ class VerticaDriver implements Driver
         /* Illuminate ConnectionFactory compatibility */
         $username = $username ?: $params['username'];
         $password = $password ?: $params['password'];
-        $params['dbname'] = $params['dbname'] ?: $params['database'];
+        $params['dbname'] = $params['dbname'] ?? $params['database'];
         /* !Illuminate ConnectionFactory compatibility */
 
         return new ODBCConnection($this->constructDsn($params, $driverOptions), $username, $password);
