@@ -50,11 +50,20 @@
         "ext-pdo": "*",
         "ext-odbc": "*",
         "doctrine/dbal": "~2.3",
+        "illuminate/support": "^5.5",
+        "illuminate/database": "^5.5",
         "symfony/options-resolver": "^3.2"
     },
     "require-dev": {
         "phpmd/phpmd": "^2.4",
         "squizlabs/php_codesniffer": "^2.7",
         "phpunit/phpunit": "^5.6"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "mixartemev\\VerticaDriver\\VerticaDriverServiceProvider"
+            ]
+        }
     }
 }
