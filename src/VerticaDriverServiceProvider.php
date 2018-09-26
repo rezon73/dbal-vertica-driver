@@ -13,11 +13,11 @@ class VerticaDriverServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        App::bind('db.connector.vertica', function () {
+        $this->app->bind('db.connector.vertica', function () {
             return new VerticaDriver();
         });
 
-        DB::resolverFor('vertica', function ($connection, $database, $prefix, $config) {
+        $this->app->make('db')->resolverFor('vertica', function ($connection, $database, $prefix, $config) {
             return new PostgresConnection($connection, $database, $prefix, $config);
         });
     }
