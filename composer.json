@@ -1,5 +1,5 @@
 {
-    "name": "dbal-vertica-driver",
+    "name": "mixartemev/dbal-vertica-driver",
     "description": "Doctrine DBAL driver for Vertica",
     "keywords": [
         "database",
@@ -68,7 +68,5 @@
                 "mixartemev\\VerticaDriver\\VerticaDriverServiceProvider"
             ]
         }
-    },
-    "minimum-stability": "dev",
-    "prefer-stable" : true
+    }
 }
