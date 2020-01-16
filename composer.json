@@ -1,5 +1,5 @@
 {
-    "name": "mixartemev/dbal-vertica-driver",
+    "name": "dbal-vertica-driver",
     "description": "Doctrine DBAL driver for Vertica",
     "keywords": [
         "database",
