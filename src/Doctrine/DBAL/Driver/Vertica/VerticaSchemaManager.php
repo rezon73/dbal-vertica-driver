@@ -7,7 +7,7 @@
  * with this package in the file LICENSE.
  */
 
-namespace Che\DBAL\Vertica;
+namespace Doctrine\DBAL\Driver\Vertica;
 
 use Doctrine\DBAL\Event\SchemaIndexDefinitionEventArgs;
 use Doctrine\DBAL\Events;
@@ -44,6 +44,7 @@ class VerticaSchemaManager extends PostgreSqlSchemaManager
 
     /**
      * {@inheritDoc}
+     * @throws \Doctrine\DBAL\DBALException
      */
     public function getSchemaSearchPaths()
     {
@@ -125,6 +126,7 @@ class VerticaSchemaManager extends PostgreSqlSchemaManager
      *
      * @return Column
      *
+     * @throws \Doctrine\DBAL\DBALException
      * @see AbstractSchemaManager::listTableColumns()
      * @see VerticaPlatform::getListTableColumnsSQL()
      */

@@ -7,7 +7,7 @@
  * with this package in the file LICENSE.
  */
 
-namespace Che\DBAL\Vertica;
+namespace Doctrine\DBAL\Driver\Vertica;
 
 use Doctrine\DBAL\Driver\Connection;
 
@@ -49,7 +49,7 @@ class ODBCConnection implements Connection
     public function __construct($dsn, $user, $password, array $options = [])
     {
         $this->options = array_merge(self::$defaultOptions, $options);
-        $this->dbh = @odbc_connect($dsn, $user, $password);
+        $this->dbh = odbc_connect($dsn, $user, $password);
         if (!$this->dbh) {
             $error = error_get_last();
             throw new ODBCException($error['message']);

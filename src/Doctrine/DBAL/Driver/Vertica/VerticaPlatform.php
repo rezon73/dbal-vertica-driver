@@ -7,7 +7,7 @@
  * with this package in the file LICENSE.
  */
 
-namespace Che\DBAL\Vertica;
+namespace Doctrine\DBAL\Driver\Vertica;
 
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Platforms\PostgreSqlPlatform;
@@ -76,7 +76,7 @@ class VerticaPlatform extends PostgreSqlPlatform
      */
     public function getListDatabasesSQL()
     {
-        return "SELECT name as datname FROM v_catalog.databases";
+        return "SELECT database_name as datname FROM v_catalog.databases";
     }
 
     /**
@@ -121,7 +121,7 @@ class VerticaPlatform extends PostgreSqlPlatform
     public function getListTableConstraintsSQL($table)
     {
         return "SELECT c.constraint_id, c.column_name, c.constraint_name, c.constraint_type FROM v_catalog.constraint_columns c
-                  LEFT JOIN primary_keys p ON p.constraint_id = c.constraint_id AND p.column_name = c.column_name
+                  LEFT JOIN v_catalog.primary_keys p ON p.constraint_id = c.constraint_id AND p.column_name = c.column_name
                 WHERE c.constraint_type IN ('u', 'p') AND c.table_name = '$table'
                 ORDER BY c.constraint_id, p.ordinal_position, c.column_name";
     }
@@ -202,6 +202,7 @@ class VerticaPlatform extends PostgreSqlPlatform
      * @param TableDiff $diff
      *
      * @return array
+     * @throws DBALException
      */
     public function getAlterTableSQL(TableDiff $diff)
     {
@@ -400,7 +401,7 @@ class VerticaPlatform extends PostgreSqlPlatform
     /**
      * SQL for generating table comment with column comments
      *
-     * @param array $tableName
+     * @param string $tableName
      * @param array $columnComments An array of [columnName => columnComment]
      *
      * @return string

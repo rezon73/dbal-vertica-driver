@@ -7,7 +7,7 @@
  * with this package in the file LICENSE.
  */
 
-namespace Che\DBAL\Vertica;
+namespace Doctrine\DBAL\Driver\Vertica;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver;
@@ -57,6 +57,12 @@ class VerticaDriver implements Driver
      */
     public function connect(array $params, $username = null, $password = null, array $driverOptions = [])
     {
+        /* Illuminate ConnectionFactory compatibility */
+        $username = $username ?: $params['username'];
+        $password = $password ?: $params['password'];
+        $params['dbname'] = $params['dbname'] ?? $params['database'];
+        /* !Illuminate ConnectionFactory compatibility */
+
         return new ODBCConnection($this->constructDsn($params, $driverOptions), $username, $password);
     }
 
@@ -86,6 +92,7 @@ class VerticaDriver implements Driver
 
     /**
      * {@inheritDoc}
+     * @throws \Doctrine\DBAL\DBALException
      */
     public function getDatabase(Connection $conn)
     {

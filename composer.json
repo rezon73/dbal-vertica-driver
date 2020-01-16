@@ -1,5 +1,5 @@
 {
-    "name": "winnersoftlab/dbal-vertica-driver",
+    "name": "mixartemev/dbal-vertica-driver",
     "description": "Doctrine DBAL driver for Vertica",
     "keywords": [
         "database",
@@ -9,7 +9,7 @@
         "driver",
         "analytics"
     ],
-    "homepage": "https://github.com/WinnerSoftLab/dbal-vertica-driver",
+    "homepage": "https://github.com/mixartemev/dbal-vertica-driver",
     "type": "library",
     "license": "MIT",
     "conflict": {
@@ -26,27 +26,47 @@
             "email": "andrey@kolchenko.me",
             "role": "developer",
             "homepage": "https://github.com/komex"
+        },
+        {
+            "name": "Mike Artemiev",
+            "email": "mixartemev@gmail.com",
+            "role": "developer",
+            "homepage": "https://github.com/mixartemev"
         }
     ],
     "autoload": {
         "psr-0": {
-            "Che\\DBAL\\Vertica": "src/"
+            "Doctrine\\DBAL\\Driver\\Vertica": "src/"
+        },
+        "psr-4": {
+            "mixartemev\\VerticaDriver\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Che\\DBAL\\Vertica\\Tests\\": "tests/"
+            "Doctrine\\DBAL\\Driver\\Vertica\\Tests\\": "tests/"
         }
     },
     "require": {
-        "php": ">=5.4.0",
+        "php": ">=7.0",
+        "ext-json": "*",
+        "ext-pdo": "*",
         "ext-odbc": "*",
-        "doctrine/dbal": "<2.6",
-        "symfony/options-resolver": "^3.2"
+        "doctrine/dbal": "~2.3",
+        "illuminate/support": "^5.5|^6.0",
+        "illuminate/database": "^5.5|^6.0",
+        "symfony/options-resolver": "^3.2|^v4.3"
     },
     "require-dev": {
         "phpmd/phpmd": "^2.4",
         "squizlabs/php_codesniffer": "^2.7",
         "phpunit/phpunit": "^5.6"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "mixartemev\\VerticaDriver\\VerticaDriverServiceProvider"
+            ]
+        }
     }
 }

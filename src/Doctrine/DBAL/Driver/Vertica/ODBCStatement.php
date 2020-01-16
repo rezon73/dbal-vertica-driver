@@ -1,14 +1,8 @@
 <?php
-/*
- * Copyright (c)
- * Kirill chEbba Chebunin <iam@chebba.org>
- *
- * This source file is subject to the MIT license that is bundled
- * with this package in the file LICENSE.
- */
 
-namespace Che\DBAL\Vertica;
+namespace Doctrine\DBAL\Driver\Vertica;
 
+use Doctrine\DBAL\Driver\PDOStatement;
 use Doctrine\DBAL\Driver\Statement;
 use Iterator;
 
@@ -16,9 +10,10 @@ use Iterator;
  * Statement implementation for ODBC connection
  *
  * @author Kirill chEbba Chebunin <iam@chebba.org>
+ * @author Mike Artemiev <mixartemev@gmail.com>
  * @license http://www.opensource.org/licenses/mit-license.php MIT
  */
-class ODBCStatement implements Iterator, Statement
+class ODBCStatement extends PDOStatement implements /*Iterator, */Statement
 {
     /**
      * @var resource
@@ -87,7 +82,7 @@ class ODBCStatement implements Iterator, Statement
     /**
      * {@inheritDoc}
      */
-    public function bindValue($param, $value, $type = null)
+    public function bindValue($param, $value, $type = \PDO::PARAM_STR)
     {
         $this->bindParam($param, $value, $type);
     }
@@ -95,7 +90,7 @@ class ODBCStatement implements Iterator, Statement
     /**
      * {@inheritDoc}
      */
-    public function bindParam($column, &$variable, $type = null, $length = null)
+    public function bindParam($column, &$variable, $type = \PDO::PARAM_STR, $length = null, $driverOptions = null)
     {
         if (!in_array($column, $this->paramMap, true)) {
             throw new ODBCException(
@@ -110,7 +105,11 @@ class ODBCStatement implements Iterator, Statement
     /**
      * {@inheritDoc}
      */
-    public function setFetchMode($fetchMode, $arg2 = null, $arg3 = null)
+    //public function setFetchMode($fetchMode, $classNameObject = null, array $ctorarfg = [])
+    /* todo resolve compatibility
+    PDOStatement->setFetchMode(mode : int, [classNameObject : object|string], [ctorarfg : array])
+    ResultStatement->setFetchMode(fetchMode : int, [arg2 : mixed|null = null], [arg3 : mixed|null = null]) */
+    public function setFetchMode($fetchMode, $classNameObject = null, $ctorarfg = null)
     {
         $this->defaultFetchMode = $fetchMode;
     }
@@ -118,7 +117,7 @@ class ODBCStatement implements Iterator, Statement
     /**
      * {@inheritDoc}
      */
-    public function fetch($fetchMode = null)
+    public function fetch($fetchMode = null, $cursorOrientation = \PDO::FETCH_ORI_NEXT, $cursorOffset = 0)
     {
         if (!odbc_fetch_row($this->sth)) {
             return false;
@@ -143,6 +142,13 @@ class ODBCStatement implements Iterator, Statement
                     $value = odbc_result($this->sth, $i);
                     $row[] = $value;
                     $row[odbc_field_name($this->sth, $i)] = $value;
+                }
+                break;
+            case \PDO::FETCH_OBJ:
+                $row = new \stdClass();
+                for ($i = 1; $i <= $numFields; $i++) {
+                    $fieldName = odbc_field_name($this->sth, $i);
+                    $row->$fieldName = odbc_result($this->sth, $i);
                 }
                 break;
 
@@ -194,7 +200,7 @@ class ODBCStatement implements Iterator, Statement
     /**
      * {@inheritDoc}
      */
-    public function fetchAll($fetchMode = null)
+    public function fetchAll($fetchMode = null, $fetchArgument = null, $ctorArgs = null)
     {
         $rows = [];
         while ($row = $this->fetch($fetchMode)) {
