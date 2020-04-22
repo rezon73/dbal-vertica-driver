@@ -44,7 +44,7 @@
     "autoload": {
         "psr-0": {
             "Doctrine\\DBAL\\Driver\\Vertica": "src/",
-            "Doctrine\\DBAL\\Driver\\Vertica": "src/"
+            "Illuminate\\Database\\Vertica": "src/"
         },
         "psr-4": {
             "rezon73\\VerticaDriver\\": "src"
