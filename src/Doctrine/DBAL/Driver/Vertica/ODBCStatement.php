@@ -119,9 +119,14 @@ class ODBCStatement extends PDOStatement implements /*Iterator, */Statement
      */
     public function fetch($fetchMode = null, $cursorOrientation = \PDO::FETCH_ORI_NEXT, $cursorOffset = 0)
     {
-        if (!odbc_fetch_row($this->sth)) {
+        try {
+            if (!odbc_fetch_row($this->sth)) {
+                return false;
+            }
+        } catch (\Exception $e) {
             return false;
         }
+
         $fetchMode = $fetchMode ?: $this->defaultFetchMode;
         $numFields = odbc_num_fields($this->sth);
         $row = [];

@@ -18,6 +18,16 @@ class VerticaProcessor extends PostgresProcessor
      */
     public function processInsertGetId(Builder $query, $sql, $values, $sequence = null)
     {
-        return 0;
+        $result = $query->getConnection()->selectFromWriteConnection($sql, $values);
+
+        if (empty($result)) {
+            return null;
+        }
+
+        $sequence = $sequence ?: 'id';
+
+        $id = is_object($result) ? $result->{$sequence} : $result[$sequence];
+
+        return is_numeric($id) ? (int) $id : $id;
     }
 }
