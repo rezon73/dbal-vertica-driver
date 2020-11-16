@@ -105,13 +105,11 @@ class ODBCStatement extends PDOStatement implements /*Iterator, */Statement
     /**
      * {@inheritDoc}
      */
-    //public function setFetchMode($fetchMode, $classNameObject = null, array $ctorarfg = [])
-    /* todo resolve compatibility
-    PDOStatement->setFetchMode(mode : int, [classNameObject : object|string], [ctorarfg : array])
-    ResultStatement->setFetchMode(fetchMode : int, [arg2 : mixed|null = null], [arg3 : mixed|null = null]) */
-    public function setFetchMode($fetchMode, $classNameObject = null, $ctorarfg = null)
+    public function setFetchMode($fetchMode, $classNameObject = null, $ctorarfg = null): bool
     {
         $this->defaultFetchMode = $fetchMode;
+
+        return true;
     }
 
     /**
